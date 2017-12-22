@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nuch.edu.mapper.DepartmentMapper">
+    <select id="getDepById" resultType="com.nuch.edu.domain.Department">
+        SELECT id ,dept_name departmentName FROM  tbl_dept WHERE id = #{id}
+    </select>
+
+    <resultMap id="test1" type="com.nuch.edu.domain.Department">
+        <id column="did" property="id"></id>
+        <result column="dept_name" property="departmentName"></result>
+        <!--
+			collection定义关联集合类型的属性的封装规则
+			ofType:指定集合里面元素的类型
+		-->
+        <collection property="emps" ofType="com.nuch.edu.domain.Employee">
+            <!-- 定义这个集合中元素的封装规则 -->
+            <id column="eid" property="id"></id>
+            <result column="gender" property="gender"></result>
+            <result column="last_name" property="lastName"></result>
+            <result column="email" property="email"></result>
+        </collection>
+    </resultMap>
+    <select id="getDepCollection" resultMap="test1">
+        SELECT d.id did,d.dept_name dept_name,
+				e.id eid,e.gender gender,e.last_name last_name ,e.email email
+            FROM tbl_dept d LEFT JOIN tbl_employee e
+            on  d.id = e.dept_id
+            WHERE d.id = #{id};
+    </select>
+
+    <resultMap id="test2" type="com.nuch.edu.domain.Department">
+    <id column="id" property="id"></id>
+    <result column="dept_name" property="departmentName"></result>
+    <collection property="emps"   fetchType="lazy" select="com.nuch.edu.mapper.EmployeeMapper.getEmpByDepId" column="{dept_id=id}">
+    </collection>
+    </resultMap>
+
+    <select id="getDepByStep" resultMap="test2">
+        SELECT * FROM  tbl_dept WHERE  id=#{id}
+    </select>
+</mapper>

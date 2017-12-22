@@ -3,7 +3,128 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.nuch.edu.mapper.EmployeeMapper">
-    <select id="getEmployeeByid" resultType="com.nuch.edu.domain.Employee">
-        select id,last_name lastName,email,gender  from tbl_employee where id = #{id}
+    <!--<select id="getEmployeeByid" resultType="employee">
+        select id,last_name,email,gender  from tbl_employee where id = #{id}
+    </select>-->
+    <insert id="addEmp" useGeneratedKeys="true" keyProperty="id">
+      insert into tbl_employee (last_name,email,gender)
+        VALUES (#{lastName},#{email},#{gender})
+    </insert>
+
+    <update id="updateEmp">
+        UPDATE tbl_employee
+          SET last_name=#{lastName},email=#{email},gender=#{gender}
+          WHERE id=#{id}
+    </update>
+
+    <delete id="deleteEmp">
+        DELETE FROM tbl_employee
+          WHERE id=#{id}
+    </delete>
+
+    <select id="getEmpByIdAndLastName" resultType="com.nuch.edu.domain.Employee">
+        SELECT * FROM tbl_employee
+          WHERE id=#{id} and last_name=#{lastName}
+    </select>
+
+    <select id="getEmpByMap" resultType="com.nuch.edu.domain.Employee">
+        SELECT * FROM tbl_employee
+           WHERE id=#{id} and last_name=#{lastName}
+    </select>
+
+    <select id="getEmpReturnMap" resultType="map">
+        SELECT * FROM tbl_employee
+           WHERE last_name = #{lastName}
+    </select>
+
+    <select id="getEmpReturnList" resultType="com.nuch.edu.domain.Employee">
+         SELECT * FROM tbl_employee
+           WHERE last_name like #{lastName}
+    </select>
+
+    <select id="getEmpReturnMap1" resultType="com.nuch.edu.domain.Employee">
+        SELECT * FROM tbl_employee
+           WHERE last_name like #{lastName}
+    </select>
+
+    <!--自定义某个javaBean的封装规则
+	type：类的全限定名, 或者一个类型别名
+	id:当前命名空间中的一个唯一标识，用于标识一个result map.
+	  -->
+    <resultMap id="myResultMap" type="com.nuch.edu.domain.Employee">
+        <!--id 和 result 都映射一个单独列的值到简单数据类型的单独属性或字段。
+		column：从数据库中得到的列名,或者是列名的重命名标签。这也是通常和会传递给 resultSet.getString(columnName)方法参数中相同的字符串。
+		property：映射到列结果的字段或属性。如果匹配的是存在的,和给定名称相同的 JavaBeans 的属性,那么就会使用。否则 MyBatis 将会寻找给定名称 property 的字段。
+		 -->
+        <id column="id" property="id"></id>
+        <!-- 定义普通列封装规则 -->
+        <result column="last_name" property="lastName"></result>
+        <!-- 其他不指定的列会自动封装-->
+    </resultMap>
+    <!-- resultMap:自定义结果集映射规则；  -->
+    <select id="getEmployeeByid" resultMap="myResultMap">
+        select id,last_name,email,gender  from tbl_employee where id = #{id}
+    </select>
+
+    <resultMap id="test1" type="com.nuch.edu.domain.Employee">
+        <id column="id" property="id"></id>
+        <result column="last_name" property="lastName"></result>
+        <result column="gender" property="gender"></result>
+        <result column="email" property="email"></result>
+        <result column="did" property="dept.id"></result>
+        <result column="dept_name" property="dept.departmentName"></result>
+    </resultMap>
+    <!--
+       使用association定义关联的单个对象的封装规则；
+    -->
+    <resultMap id="test2" type="com.nuch.edu.domain.Employee">
+        <id column="id" property="id"></id>
+        <result column="last_name" property="lastName"></result>
+        <result column="gender" property="gender"></result>
+        <result column="email" property="email"></result>
+        <!--  association可以指定联合的javaBean对象
+		property="dept"：指定哪个属性是联合的对象
+		javaType:指定这个属性对象的类型[不能省略]
+		-->
+       <association property="dept" javaType="com.nuch.edu.domain.Department">
+           <id column="did" property="id"></id>
+           <result column="dept_name" property="departmentName"></result>
+       </association>
+    </resultMap>
+
+    <select id="getEmpAndDep" resultMap="test2">
+        SELECT d.id did ,d.dept_name dept_name ,
+        e.id id, e.last_name last_name,e.gender gender, e.email email
+        from tbl_dept d ,tbl_employee e
+        WHERE 	d.id = e.dept_id
+        and e.id = 1
+    </select>
+    <!-- 使用association进行分步查询：
+            1、先按照员工id查询员工信息
+            2、根据查询员工信息中的dept_id值去部门表查出部门信息
+            3、部门信息封装到员工属性中；
+    -->
+    <resultMap id="test3" type="com.nuch.edu.domain.Employee">
+        <id column="id" property="id"></id>
+        <result column="last_name" property="lastName"></result>
+        <result column="gender" property="gender"></result>
+        <result column="email" property="email"></result>
+        <!-- association定义关联对象的封装规则
+	 		select:调用目标的方法查询当前属性的值
+	 		column:将指定列的值传入目标方法
+
+	 		流程：使用select指定的方法（传入column指定的这列参数的值）查出对象，并封装给property指定的属性
+	 	 -->
+        <association property="dept" select="com.nuch.edu.mapper.DepartmentMapper.getDepById"
+        column="dept_id">
+        </association>
+    </resultMap>
+
+    <select id="getEmpByStep" resultMap="test3">
+        SELECT * FROM tbl_employee WHERE id=#{id}
+    </select>
+
+    <select id="getEmpByDepId" resultType="com.nuch.edu.domain.Employee">
+        SELECT  * FROM  tbl_employee WHERE dept_id = #{dept_id}
     </select>
 </mapper>
